@@ -87,6 +87,7 @@
     CONTAINER: 'mdl-layout__container',
     HEADER: 'mdl-layout__header',
     DRAWER: 'mdl-layout__drawer',
+    DRAWER_FLOAT: 'mdl-floating-drawer',
     CONTENT: 'mdl-layout__content',
     DRAWER_BTN: 'mdl-layout__drawer-button',
 
@@ -125,7 +126,6 @@
 
     ON_LARGE_SCREEN: 'mdl-layout--large-screen-only',
     ON_SMALL_SCREEN: 'mdl-layout--small-screen-only'
-
   };
 
   /**
@@ -186,7 +186,9 @@
       // Collapse drawer (if any) when moving to a large screen size.
       if (this.drawer_) {
         this.drawer_.classList.remove(this.CssClasses_.IS_DRAWER_OPEN);
-        this.obfuscator_.classList.remove(this.CssClasses_.IS_DRAWER_OPEN);
+        if (this.obfuscator_) {
+          this.obfuscator_.classList.remove(this.CssClasses_.IS_DRAWER_OPEN);
+        }
       }
     }
   };
@@ -266,7 +268,9 @@
     var drawerButton =
         this.element_.querySelector('.' + this.CssClasses_.DRAWER_BTN);
     this.drawer_.classList.toggle(this.CssClasses_.IS_DRAWER_OPEN);
-    this.obfuscator_.classList.toggle(this.CssClasses_.IS_DRAWER_OPEN);
+    if (this.obfuscator_) {
+      this.obfuscator_.classList.toggle(this.CssClasses_.IS_DRAWER_OPEN);
+    }
 
     // Set accessibility properties.
     if (this.drawer_.classList.contains(this.CssClasses_.IS_DRAWER_OPEN)) {
@@ -416,16 +420,20 @@
           this.element_.insertBefore(drawerButton, this.content_);
         }
 
-        var obfuscator = document.createElement('div');
-        obfuscator.classList.add(this.CssClasses_.OBFUSCATOR);
-        this.element_.appendChild(obfuscator);
-        obfuscator.addEventListener('click',
-            this.drawerToggleHandler_.bind(this));
-        this.obfuscator_ = obfuscator;
+        if (this.drawer_.classList.contains(this.CssClasses_.DRAWER_FLOAT)) {
 
-        this.drawer_.addEventListener('keydown',
-            this.keyboardEventHandler_.bind(this));
-        this.drawer_.setAttribute('aria-hidden', 'true');
+        } else {
+          var obfuscator = document.createElement('div');
+          obfuscator.classList.add(this.CssClasses_.OBFUSCATOR);
+          this.element_.appendChild(obfuscator);
+          obfuscator.addEventListener('click',
+              this.drawerToggleHandler_.bind(this));
+          this.obfuscator_ = obfuscator;
+
+          this.drawer_.addEventListener('keydown',
+              this.keyboardEventHandler_.bind(this));
+          this.drawer_.setAttribute('aria-hidden', 'true');
+        }
       }
 
       // Keep an eye on screen size, and add/remove auxiliary class for styling

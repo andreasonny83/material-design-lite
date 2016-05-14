@@ -501,7 +501,7 @@ gulp.task('assets', () => {
     'node_modules/prismjs/components/prism-javascript.min.js',
     'node_modules/prismjs/components/prism-css.min.js',
     'node_modules/prismjs/components/prism-bash.min.js',
-    'node_modules/prismjs/dist/prism-default/prism-default.css'
+    'node_modules/prismjs/themes/prism.css'
   ])
   .pipe($.if(/\.js/i, $.replace('$$version$$', pkg.version)))
   .pipe($.if(/\.js/i, $.replace('$$hosted_libs_prefix$$', hostedLibsUrlPrefix)))
