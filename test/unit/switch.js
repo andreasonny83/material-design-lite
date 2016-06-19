@@ -20,46 +20,78 @@ describe('MaterialSwitch', function () {
     var label = document.createElement('label');
     var input = document.createElement('input');
     var labelText = document.createElement('span');
-    label.for = 'testSwitch';
-    input.id = label.for;
-    label.className = 'mdl-switch mdl-js-switch';
+    label.className = 'mdl-switch';
     input.type = 'checkbox';
     input.className = 'mdl-switch__input';
     label.appendChild(input);
-    labelText.text = 'Sound off/on';
     labelText.className = 'mdl-switch__label';
+    labelText.text = 'Test Switch';
     label.appendChild(labelText);
     return label;
-  };
+  }
 
-  it('should be globally available', function () {
+  it('should be globally available', function() {
     expect(MaterialSwitch).to.be.a('function');
   });
 
-  it('should upgrade successfully', function () {
+  it('should upgrade successfully', function() {
     var el = createSwitch();
-    componentHandler.upgradeElement(el, 'MaterialSwitch');
-    expect($(el)).to.have.data('upgraded', ',MaterialSwitch');
+    var sw = new MaterialSwitch(el);
+    expect(sw).to.be.an.instanceof(MaterialSwitch);
+    expect(el.classList.contains('mdl-switch--is-upgraded')).to.be.true;
   });
 
-  it('should get disabled class after being checked', function() {
-    var switchElement = createSwitch();
-    componentHandler.upgradeElement(switchElement);
-    switchElement.querySelector('input').disabled = true;
-    switchElement.MaterialSwitch.checkDisabled();
-    expect((function() {
-      return switchElement.className;
-    }())).to.equal('mdl-switch mdl-js-switch is-upgraded is-disabled');
+  it('should build a valid DOM with no parameters', function() {
+    var sw = new MaterialSwitch();
+    expect(sw).to.be.an.instanceof(MaterialSwitch);
+    expect(sw.root).to.be.an.instanceof(Element);
   });
 
-  it('should get checked class after checking toggle state', function() {
-    var switchElement = createSwitch();
-    componentHandler.upgradeElement(switchElement);
-    switchElement.querySelector('input').checked = true;
-    switchElement.MaterialSwitch.checkToggleState();
-    expect((function() {
-      return switchElement.className;
-    }())).to.equal('mdl-switch mdl-js-switch is-upgraded is-checked');
+  it('should get checked class after being checked', function() {
+    var el = createSwitch();
+    var sw = new MaterialSwitch(el);
+    sw.checked = true;
+    expect(el.classList.contains('is-checked')).to.be.true;
   });
 
+  it('should return true in .checked after being checked', function() {
+    var el = createSwitch();
+    var sw = new MaterialSwitch(el);
+    sw.checked = true;
+    expect(sw.checked).to.be.true;
+  });
+
+  it('should get disabled class after being disabled', function() {
+    var el = createSwitch();
+    var sw = new MaterialSwitch(el);
+    sw.disabled = true;
+    expect(el.classList.contains('is-disabled')).to.be.true;
+  });
+
+  it('should return true in .disabled after being disabled', function() {
+    var el = createSwitch();
+    var sw = new MaterialSwitch(el);
+    sw.disabled = true;
+    expect(sw.disabled).to.be.true;
+  });
+  
+  it('should return the label', function() {
+    var el = createSwitch();
+    var sw = new MaterialSwitch(el);
+    expect(sw.label).to.satisfy(function(val) {
+      return val == el.querySelector('.mdl-switch__label');
+    });
+  });
+
+  it('should return null if there is no label', function() {
+    var el = document.createElement('label');
+    var input = document.createElement('input');
+    el.className = 'mdl-switch';
+    input.type = 'checkbox';
+    input.className = 'mdl-switch__input';
+    el.appendChild(input);
+
+    var sw = new MaterialSwitch(el);
+    expect(sw.label).to.be.null;
+  });
 });

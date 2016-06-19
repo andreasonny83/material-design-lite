@@ -15,257 +15,209 @@
  * limitations under the License.
  */
 
-(function() {
-  'use strict';
+/**
+ * The MaterialCheckbox class wraps a Material Design checkbox component.
+ *
+ * @export
+ */
+class MaterialCheckbox extends MaterialComponent {
+  /**
+   * Initialize checkbox from a DOM node.
+   *
+   * @param {Element=} optRoot The element being upgraded.
+   */
+  constructor(optRoot) {
+    super(optRoot);
+
+    // Check if the root has the right class.
+    if (!this.root_.classList.contains(this.constructor.cssClasses_.ROOT)) {
+      throw new Error('MaterialCheckbox missing ' +
+          `${this.constructor.cssClasses_.ROOT} class.`);
+    }
+
+    // Look for required sub-nodes in the root's DOM.
+    this.input_ =
+        this.root_.querySelector(`.${MaterialCheckbox.cssClasses_.INPUT}`);
+    if (!this.input_) {
+      throw new Error('MaterialCheckbox missing ' +
+          `${MaterialCheckbox.cssClasses_.INPUT} node.`);
+    }
+
+    // Look for optional sub-nodes in the root's DOM.
+    this.label_ =
+        this.root_.querySelector(`.${MaterialCheckbox.cssClasses_.LABEL}`);
+
+    // Initialize event listeners.
+    this.changeListener_ = this.refresh.bind(this);
+    this.focusListener_ =
+        () => this.root_.classList.add(MaterialCheckbox.cssClasses_.IS_FOCUSED);
+    this.blurListener_ = () => this.root_.classList.remove(
+        MaterialCheckbox.cssClasses_.IS_FOCUSED);
+    this.mouseUpListener_ = this.blur_.bind(this);
+
+    // Finalize initialization.
+    this.init_();
+  }
 
   /**
-   * Class constructor for Checkbox MDL component.
-   * Implements MDL component design pattern defined at:
-   * https://github.com/jasonmayes/mdl-component-design-pattern
+   * Creates the DOM subtree for a new component.
+   * Greatly simplifies programmatic component creation.
    *
-   * @constructor
-   * @param {HTMLElement} element The element that will be upgraded.
+   * @protected
+   * @nocollapse
+   * @return {Element} The DOM subtree for the component.
    */
-  var MaterialCheckbox = function MaterialCheckbox(element) {
-    this.element_ = element;
+  static buildDom_() {
+    let root = document.createElement('label');
+    let input = document.createElement('input');
+    let label = document.createElement('span');
+    root.classList.add(MaterialCheckbox.cssClasses_.ROOT);
+    input.type = 'checkbox';
+    input.classList.add(MaterialCheckbox.cssClasses_.INPUT);
+    root.appendChild(input);
+    label.classList.add(MaterialCheckbox.cssClasses_.LABEL);
+    root.appendChild(label);
 
-    // Initialize instance.
-    this.init();
-  };
-  window['MaterialCheckbox'] = MaterialCheckbox;
-
-  /**
-   * Store constants in one place so they can be updated easily.
-   *
-   * @enum {string | number}
-   * @private
-   */
-  MaterialCheckbox.prototype.Constant_ = {
-    TINY_TIMEOUT: 0.001
-  };
+    return root;
+  }
 
   /**
-   * Store strings for class names defined by this component that are used in
-   * JavaScript. This allows us to simply change it in one place should we
-   * decide to modify at a later date.
+   * CSS classes used in this component.
    *
-   * @enum {string}
-   * @private
+   * @protected
+   * @return {Object<string, string>} The CSS classes used in this component.
    */
-  MaterialCheckbox.prototype.CssClasses_ = {
-    INPUT: 'mdl-checkbox__input',
-    BOX_OUTLINE: 'mdl-checkbox__box-outline',
-    FOCUS_HELPER: 'mdl-checkbox__focus-helper',
-    TICK_OUTLINE: 'mdl-checkbox__tick-outline',
-    RIPPLE_EFFECT: 'mdl-js-ripple-effect',
-    RIPPLE_IGNORE_EVENTS: 'mdl-js-ripple-effect--ignore-events',
-    RIPPLE_CONTAINER: 'mdl-checkbox__ripple-container',
-    RIPPLE_CENTER: 'mdl-ripple--center',
-    RIPPLE: 'mdl-ripple',
-    IS_FOCUSED: 'is-focused',
-    IS_DISABLED: 'is-disabled',
-    IS_CHECKED: 'is-checked',
-    IS_UPGRADED: 'is-upgraded'
-  };
+  static get cssClasses_() {
+    return {
+      ROOT: 'mdl-checkbox',
+      JS: 'mdl-js-checkbox',
+      INPUT: 'mdl-checkbox__input',
+      LABEL: 'mdl-checkbox__label',
+
+      IS_FOCUSED: 'is-focused',
+      IS_DISABLED: 'is-disabled',
+      IS_CHECKED: 'is-checked'
+    };
+  }
 
   /**
-   * Handle change of state.
+   * Attach all listeners to the DOM.
    *
-   * @private
+   * @export
    */
-  MaterialCheckbox.prototype.onChange_ = function() {
-    this.updateClasses_();
-  };
+  addEventListeners() {
+    this.input_.addEventListener('change', this.changeListener_);
+    this.input_.addEventListener('focus', this.focusListener_);
+    this.input_.addEventListener('blur', this.blurListener_);
+    this.root_.addEventListener('mouseup', this.mouseUpListener_);
+  }
 
   /**
-   * Handle focus of element.
+   * Remove all listeners from the DOM.
    *
-   * @private
+   * @export
    */
-  MaterialCheckbox.prototype.onFocus_ = function() {
-    this.element_.classList.add(this.CssClasses_.IS_FOCUSED);
-  };
+  removeEventListeners() {
+    this.input_.removeEventListener('change', this.changeListener_);
+    this.input_.removeEventListener('focus', this.focusListener_);
+    this.input_.removeEventListener('blur', this.blurListener_);
+    this.root_.removeEventListener('mouseup', this.mouseUpListener_);
+  }
 
   /**
-   * Handle lost focus of element.
+   * Set "checked" value on checkbox.
    *
-   * @private
+   * @param {boolean} value The value to set the property to.
+   * @export
    */
-  MaterialCheckbox.prototype.onBlur_ = function() {
-    this.element_.classList.remove(this.CssClasses_.IS_FOCUSED);
-  };
+  set checked(value) {
+    this.input_.checked = Boolean(value);
+    this.refresh();
+  }
 
   /**
-   * Handle mouseup.
+   * Return "checked" value on checkbox.
    *
-   * @private
+   * @return {boolean} The current value of the property.
+   * @export
    */
-  MaterialCheckbox.prototype.onMouseUp_ = function() {
-    this.blur_();
-  };
+  get checked() {
+    return this.input_.checked;
+  }
 
   /**
-   * Handle class updates.
+   * Disable / enable the checkbox component.
    *
-   * @private
+   * @param {boolean} value The value to set the property to.
+   * @export
    */
-  MaterialCheckbox.prototype.updateClasses_ = function() {
-    this.checkDisabled();
-    this.checkToggleState();
-  };
+  set disabled(value) {
+    this.input_.disabled = Boolean(value);
+    this.refresh();
+  }
+
+  /**
+   * Return whether the checkbox component is disabled or enabled.
+   *
+   * @return {boolean} The current value of the property.
+   * @export
+   */
+  get disabled() {
+    return this.input_.disabled;
+  }
+
+  /**
+   * Return the label element for the checkbox, if any.
+   *
+   * @return {Element?} The label for the checkbox, if any (null if not).
+   * @export
+   */
+  get label() {
+    return this.label_;
+  }
+
+  /**
+   * Run a visual refresh on the component, in case it's gone out of sync.
+   *
+   * @export
+   */
+  refresh() {
+    this.checkDisabled_();
+    this.checkToggleState_();
+  }
 
   /**
    * Add blur.
    *
    * @private
    */
-  MaterialCheckbox.prototype.blur_ = function() {
-    /**
-     * @todo: figure out why there's a focus event being fired after our blur,
-     * so that we can avoid this hack.
-     */
-    window.setTimeout(function() {
-      this.inputElement_.blur();
-    }.bind(this), /** @type {number} */ (this.Constant_.TINY_TIMEOUT));
-  };
-
-  // Public methods.
+  blur_() {
+    requestAnimationFrame(() => this.input_.blur());
+  }
 
   /**
-   * Check the inputs toggle state and update display.
+   * Check the input's toggle state and update display.
    *
-   * @public
+   * @private
    */
-  MaterialCheckbox.prototype.checkToggleState = function() {
-    if (this.inputElement_.checked) {
-      this.element_.classList.add(this.CssClasses_.IS_CHECKED);
+  checkToggleState_() {
+    if (this.input_.checked) {
+      this.root_.classList.add(MaterialCheckbox.cssClasses_.IS_CHECKED);
     } else {
-      this.element_.classList.remove(this.CssClasses_.IS_CHECKED);
+      this.root_.classList.remove(MaterialCheckbox.cssClasses_.IS_CHECKED);
     }
-  };
-  MaterialCheckbox.prototype['checkToggleState'] =
-      MaterialCheckbox.prototype.checkToggleState;
+  }
 
   /**
-   * Check the inputs disabled state and update display.
+   * Check the input's disabled state and update display.
    *
-   * @public
+   * @private
    */
-  MaterialCheckbox.prototype.checkDisabled = function() {
-    if (this.inputElement_.disabled) {
-      this.element_.classList.add(this.CssClasses_.IS_DISABLED);
+  checkDisabled_() {
+    if (this.input_.disabled) {
+      this.root_.classList.add(MaterialCheckbox.cssClasses_.IS_DISABLED);
     } else {
-      this.element_.classList.remove(this.CssClasses_.IS_DISABLED);
+      this.root_.classList.remove(MaterialCheckbox.cssClasses_.IS_DISABLED);
     }
-  };
-  MaterialCheckbox.prototype['checkDisabled'] =
-      MaterialCheckbox.prototype.checkDisabled;
-
-  /**
-   * Disable checkbox.
-   *
-   * @public
-   */
-  MaterialCheckbox.prototype.disable = function() {
-    this.inputElement_.disabled = true;
-    this.updateClasses_();
-  };
-  MaterialCheckbox.prototype['disable'] = MaterialCheckbox.prototype.disable;
-
-  /**
-   * Enable checkbox.
-   *
-   * @public
-   */
-  MaterialCheckbox.prototype.enable = function() {
-    this.inputElement_.disabled = false;
-    this.updateClasses_();
-  };
-  MaterialCheckbox.prototype['enable'] = MaterialCheckbox.prototype.enable;
-
-  /**
-   * Check checkbox.
-   *
-   * @public
-   */
-  MaterialCheckbox.prototype.check = function() {
-    this.inputElement_.checked = true;
-    this.updateClasses_();
-  };
-  MaterialCheckbox.prototype['check'] = MaterialCheckbox.prototype.check;
-
-  /**
-   * Uncheck checkbox.
-   *
-   * @public
-   */
-  MaterialCheckbox.prototype.uncheck = function() {
-    this.inputElement_.checked = false;
-    this.updateClasses_();
-  };
-  MaterialCheckbox.prototype['uncheck'] = MaterialCheckbox.prototype.uncheck;
-
-  /**
-   * Initialize element.
-   */
-  MaterialCheckbox.prototype.init = function() {
-    if (this.element_) {
-      this.inputElement_ = this.element_.querySelector('.' +
-          this.CssClasses_.INPUT);
-
-      var boxOutline = document.createElement('span');
-      boxOutline.classList.add(this.CssClasses_.BOX_OUTLINE);
-
-      var tickContainer = document.createElement('span');
-      tickContainer.classList.add(this.CssClasses_.FOCUS_HELPER);
-
-      var tickOutline = document.createElement('span');
-      tickOutline.classList.add(this.CssClasses_.TICK_OUTLINE);
-
-      boxOutline.appendChild(tickOutline);
-
-      this.element_.appendChild(tickContainer);
-      this.element_.appendChild(boxOutline);
-
-      if (this.element_.classList.contains(this.CssClasses_.RIPPLE_EFFECT)) {
-        this.element_.classList.add(this.CssClasses_.RIPPLE_IGNORE_EVENTS);
-        this.rippleContainerElement_ = document.createElement('span');
-        this.rippleContainerElement_.classList.add(
-            this.CssClasses_.RIPPLE_CONTAINER);
-        this.rippleContainerElement_.classList.add(
-            this.CssClasses_.RIPPLE_EFFECT);
-        this.rippleContainerElement_.classList.add(
-            this.CssClasses_.RIPPLE_CENTER);
-        this.boundRippleMouseUp = this.onMouseUp_.bind(this);
-        this.rippleContainerElement_.addEventListener(
-            'mouseup', this.boundRippleMouseUp);
-
-        var ripple = document.createElement('span');
-        ripple.classList.add(this.CssClasses_.RIPPLE);
-
-        this.rippleContainerElement_.appendChild(ripple);
-        this.element_.appendChild(this.rippleContainerElement_);
-      }
-      this.boundInputOnChange = this.onChange_.bind(this);
-      this.boundInputOnFocus = this.onFocus_.bind(this);
-      this.boundInputOnBlur = this.onBlur_.bind(this);
-      this.boundElementMouseUp = this.onMouseUp_.bind(this);
-      this.inputElement_.addEventListener('change', this.boundInputOnChange);
-      this.inputElement_.addEventListener('focus', this.boundInputOnFocus);
-      this.inputElement_.addEventListener('blur', this.boundInputOnBlur);
-      this.element_.addEventListener('mouseup', this.boundElementMouseUp);
-
-      this.updateClasses_();
-      this.element_.classList.add(this.CssClasses_.IS_UPGRADED);
-    }
-  };
-
-  // The component registers itself. It can assume componentHandler is available
-  // in the global scope.
-  componentHandler.register({
-    constructor: MaterialCheckbox,
-    classAsString: 'MaterialCheckbox',
-    cssClass: 'mdl-js-checkbox',
-    widget: true
-  });
-})();
+  }
+}
